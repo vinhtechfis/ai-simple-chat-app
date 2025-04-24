@@ -38,35 +38,44 @@ export default function ChatPage() {
     }
 
     return (
-        <Box sx={{ display: 'flex', height: '100vh' }}>
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
-                <MessageList messages={messages} />
-                <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-                    <TextField
-                        fullWidth
-                        variant="outlined"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    />
-                    <IconButton color="primary" component="label">
-                        <AttachFileIcon />
-                        <input type="file" hidden onChange={handleFileUpload} />
-                    </IconButton>
-                    <IconButton color="primary" onClick={handleSend}>
-                        <SendIcon />
-                    </IconButton>
-                    <Button onClick={() => setDrawerOpen(true)}>📁</Button>
-                </Box>
-            </Box>
-
-            <Drawer
-                anchor="right"
-                open={drawerOpen}
-                onClose={() => setDrawerOpen(false)}
-            >
-                <FileDrawer messages={messages} />
-            </Drawer>
+      <Box
+        sx={{
+          display: "flex",
+          height: "90vh",
+          border: "1px solid #ccc",
+          boxShadow: 3,
+          borderRadius: 2,
+          overflow: "hidden",
+        }}
+      >
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2 }}>
+          <MessageList  messages={messages} />
+          <Box sx={{ display: "flex", gap: 1, mt: "auto" }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            />
+            <IconButton color="primary" component="label">
+              <AttachFileIcon />
+              <input type="file" hidden onChange={handleFileUpload} />
+            </IconButton>
+            <IconButton color="primary" onClick={handleSend}>
+              <SendIcon />
+            </IconButton>
+            <Button onClick={() => setDrawerOpen(true)}>📁</Button>
+          </Box>
         </Box>
-    )
+
+        <Drawer
+          anchor="right"
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+        >
+          <FileDrawer messages={messages} />
+        </Drawer>
+      </Box>
+    );
 }
