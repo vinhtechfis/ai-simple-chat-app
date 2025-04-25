@@ -1,4 +1,4 @@
-import { Box, Button, List, ListItem, Typography } from '@mui/material'
+import { List, ListItem } from '@mui/material'
 import { Message } from '../../../models/types'
 import MessageLine from './message-line';
 
@@ -13,7 +13,7 @@ export default function MessageList({ messages }: { messages: Message[] }) {
         }
         return (
           <ListItem key={msg.id}>
-            <MessageLine files={files} message={'đọcđâfafsdafasdfasfadfafaafafasdfasfas' + msg.text} />
+            <MessageLine files={files} message={msg.text} />
           </ListItem>
         )
       }

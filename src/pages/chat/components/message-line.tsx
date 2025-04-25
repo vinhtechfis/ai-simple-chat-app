@@ -23,7 +23,7 @@ const MessageLine: React.FC<FileMessageBoxProps> = ({ message, files }) => {
         <Box
             sx={{
                 display: "flex",
-                justifyContent: "flex-end", // 👉 toàn khối canh phải
+                justifyContent: "flex-end",
                 width: "100%",
             }}
         >
