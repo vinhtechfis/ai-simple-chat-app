@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
   IconButton,
   List,
   ListItem,
-  Button,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -15,7 +14,18 @@ import MessageList from "./components/message-list";
 import FileDrawer from "./components/file-drawer";
 import { Message } from "../../models/types";
 import { Icon } from "@iconify/react";
+import {
+  getAllConversations,
+  getConversationById,
+  sendMessageToAIAgent,
+  createConversation,
+} from "../../service/conversation";
+import {
+  getAllDocuments,
+  uploadDocumentByConversation,
+} from "../../service/documents";
 
+import NewChatModal from "./components/NewChatModal";
 
 export default function ChatPage() {
   const [messageHistories, setMessageHistories] = useState<
@@ -24,55 +34,115 @@ export default function ChatPage() {
   const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(
     null
   );
+  const [selectedSessionId, setSelectedSessionId] = useState<string>();
   const [input, setInput] = useState("");
   const [pendingFiles, setPendingFiles] = useState<Message[]>([]);
   const [files, setFiles] = useState<Message[]>([]);
+  const [documents, setDocuments] = useState([]);
+  const [openModal, setOpenModal] = useState(false);
+
 
   const selectedHistory = messageHistories.find(
     (h) => h.id === selectedHistoryId
   );
   const messages = selectedHistory?.messages || [];
 
-  const setMessagesForSelected = (newMessages: Message[]) => {
-    setMessageHistories((prev) =>
-      prev.map((h) =>
-        h.id === selectedHistoryId ? { ...h, messages: newMessages } : h
-      )
-    );
-  };
+ const handleCreateNewChat = async (title: string) => {
+   try {
+     const response = await createConversation({ conversation_name: title });
+     const newId = response.data.conversation.id;
 
-  const handleNewChat = () => {
-    const newId = Date.now();
-    const newChat = {
-      id: newId,
-      title: `Chat at ${new Date().toLocaleTimeString()}`,
-      messages: [],
-    };
-    setMessageHistories((prev) => [...prev, newChat]);
-    setSelectedHistoryId(newId);
-  };
+     await fetchConversations();
 
-  const handleSend = () => {
-    const createId = () => Date.now() + Math.floor(Math.random() * 10000);
-    if (!input.trim() && pendingFiles.length === 0) return;
+     handleSelectConversation(newId);
+   } catch (err) {
+     console.error("Failed to create new chat", err);
+   }
+ };
 
-    const newMessages: Message[] = [];
 
-    if (input.trim()) {
-      newMessages.push({
-        id: createId(),
-        text: input,
-        type: "text",
-      });
+const handleSend = async () => {
+  const createId = () => Date.now() + Math.floor(Math.random() * 10000);
+  if (!input.trim() && pendingFiles.length === 0) return;
+
+  if (!selectedHistoryId) {
+    console.warn("No conversation selected.");
+    return;
+  }
+
+  const newMessages: Message[] = [];
+
+  // Handle user text input
+  if (input.trim()) {
+    newMessages.push({
+      id: createId(),
+      text: input,
+      type: "text",
+    });
+  }
+
+  // Upload pending files
+  const uploadedDocs: Message[] = [];
+
+  for (const fileMsg of pendingFiles) {
+    if (fileMsg.file) {
+      try {
+        const uploaded = await uploadDocumentByConversation(
+          selectedHistoryId,
+          fileMsg.file
+        );
+        uploadedDocs.push({
+          id: createId(),
+          text: uploaded.document_name,
+          type: "file",
+          file: fileMsg.file,
+        });
+      } catch (e) {
+        console.error("Failed to upload file:", e);
+      }
     }
+  }
 
-    newMessages.push(...pendingFiles);
+  // Send message to AI agent
+  if (input.trim() || uploadedDocs.length > 0) {
+    try {
+      const firstFile = uploadedDocs[0]?.file;
+      await sendMessageToAIAgent(
+        input.trim(),
+        selectedSessionId ?? "",
+        firstFile
+      );
 
-    setMessagesForSelected([...messages, ...newMessages]);
-    setFiles((prev) => [...prev, ...pendingFiles]);
-    setPendingFiles([]);
-    setInput("");
-  };
+      // ✅ Fetch latest conversation with AI response
+      const updated = await getConversationById(selectedHistoryId);
+      const chatMessages = (updated.chat_history || []).map((item: any) => ({
+        id: item.id,
+        text: item.message.content,
+        type: item.message.type,
+      }));
+
+      setMessageHistories((prev) =>
+        prev.map((h) =>
+          h.id === selectedHistoryId ? { ...h, messages: chatMessages } : h
+        )
+      );
+    } catch (err) {
+      console.error("Failed to send message to AI agent or refresh chat", err);
+    }
+  }
+
+  // Update drawer files and clear input
+  setPendingFiles([]);
+  setInput("");
+
+  try {
+    const docs = await getAllDocuments();
+    setDocuments(docs);
+  } catch (err) {
+    console.error("Failed to refresh document list", err);
+  }
+};
+
 
   const handleButtonUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files;
@@ -108,22 +178,69 @@ export default function ChatPage() {
     }
   };
 
+  const handleSelectConversation = async (id: number) => {
+    try {
+      setSelectedHistoryId(id);
+      const data = await getConversationById(id);
+      const chatMessages = (data.chat_history || []).map((item: any) => ({
+        id: item.id,
+        text: item.message.content,
+        type: item.message.type,
+      }));
+    setSelectedSessionId(data.conversation.session_id);
+      setMessageHistories((prev) =>
+        prev.map((h) => (h.id === id ? { ...h, messages: chatMessages } : h))
+      );
+    } catch (err) {
+      console.error("Failed to load chat history", err);
+    }
+  };
+
   const handleDeleteFile = (id: number) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
+
+  const fetchDocuments = async () => {
+    try {
+      const docs = await getAllDocuments();
+      setDocuments(docs);
+    } catch (err) {
+      console.error("Error fetching documents", err);
+    }
+  };
+
+  const fetchConversations = async () => {
+    try {
+      const conversations = await getAllConversations();
+      const formatted = conversations.map((conv: any) => ({
+        id: conv.id,
+        title: conv.conversation_name,
+        messages: [],
+      }));
+      setMessageHistories(formatted);
+    } catch (err) {
+      console.error("Failed to fetch conversations", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchConversations();
+    fetchDocuments();
+  }, []);
 
   return (
     <Box
       sx={{
         display: "flex",
-        height: "90vh",
-        border: "1px solid #ccc",
-        boxShadow: 3,
-        borderRadius: 2,
+        height: "98vh",
+        // border: "1px solid #ccc",
+        // boxShadow: 3,
+        // borderRadius: 2,
+        overflow: "hidden",
       }}
     >
       {/* Left Panel */}
-      <Box sx={{ width: 250, borderRight: "1px solid #ccc", p: 2 }}>
+      <Box sx={{ width: 250, bgcolor: "#f4f4f4", p: 2 }}>
         <Box
           sx={{
             display: "flex",
@@ -135,17 +252,16 @@ export default function ChatPage() {
             AI Chat
           </Typography>
           <Tooltip title="New Chat">
-            <Button
-              onClick={handleNewChat}
-              startIcon={
-                <Icon
-                  icon="akar-icons:edit"
-                  width="24"
-                  height="24"
-                  style={{ color: "#3f424a" }}
-                />
-              }
-            />
+            <IconButton
+              onClick={() => setOpenModal(true)}
+              sx={{
+                backgroundColor: "#f5f8fb",
+                "&:hover": { backgroundColor: "#eef3f7" },
+                borderRadius: 2,
+              }}
+            >
+              <Icon icon="akar-icons:edit" width="20" height="20" />
+            </IconButton>
           </Tooltip>
         </Box>
         <List>
@@ -154,15 +270,17 @@ export default function ChatPage() {
               key={h.id}
               button
               selected={h.id === selectedHistoryId}
-              onClick={() => setSelectedHistoryId(h.id)}
+              onClick={() => handleSelectConversation(h.id)}
               sx={{
                 borderRadius: 2,
                 mb: 1,
+                cursor: "pointer", // 👈 add cursor
                 "&.Mui-selected": {
-                  backgroundColor: "#e0e0e0",
+                  backgroundColor: "#000000", // black background when selected
+                  color: "#ffffff", // optional: white text on black
                 },
                 "&:hover": {
-                  backgroundColor: "#f5f5f5",
+                  backgroundColor: "#ffffff", // white background on hover
                 },
               }}
             >
@@ -240,10 +358,16 @@ export default function ChatPage() {
       <Box sx={{ width: 300, borderLeft: "1px solid #ccc", p: 2 }}>
         <FileDrawer
           files={files}
+          documents={documents}
           onFileUpload={handleFileUpload}
           onDeleteFile={handleDeleteFile}
         />
       </Box>
+      <NewChatModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        onCreate={handleCreateNewChat}
+      />
     </Box>
   );
 }

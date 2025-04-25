@@ -13,10 +13,16 @@ import { Message } from "../../../models/types";
 
 export default function FileDrawer({
   files,
+  documents,
   onFileUpload,
   onDeleteFile,
 }: {
   files: Message[];
+  documents: {
+    id: number;
+    document_name: string;
+    url: string;
+  }[];
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onDeleteFile: (id: number) => void;
 }) {
@@ -30,7 +36,7 @@ export default function FileDrawer({
         }}
       >
         <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-          Uploaded Files
+          Knowledge Base
         </Typography>
         <IconButton color="primary" component="label">
           📤
@@ -39,9 +45,57 @@ export default function FileDrawer({
       </Box>
 
       <List>
+        {/* API documents */}
+        {documents.map((doc) => (
+          <ListItem
+            key={`doc-${doc.id}`}
+            sx={{
+              backgroundColor: "#f0f0f0",
+              borderRadius: 2,
+              mb: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              px: 2,
+              py: 1,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <InsertDriveFileIcon color="action" />
+              <Typography
+                variant="body2"
+                sx={{
+                  maxWidth: 120,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {doc.document_name}
+              </Typography>
+            </Box>
+            <Tooltip title="Download">
+              <IconButton
+                size="small"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = doc.url;
+                  link.setAttribute("download", doc.document_name);
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                }}
+              >
+                <DownloadIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </ListItem>
+        ))}
+
+        {/* Uploaded files */}
         {files.map((fileMsg) => (
           <ListItem
-            key={fileMsg.id}
+            key={`file-${fileMsg.id}`}
             sx={{
               backgroundColor: "#f0f0f0",
               borderRadius: 2,

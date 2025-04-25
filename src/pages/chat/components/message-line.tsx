@@ -1,77 +1,105 @@
-import React from "react";
-import {
-    Box,
-    Typography,
-    Button,
-    Stack,
-} from "@mui/material";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import LaunchIcon from "@mui/icons-material/Launch";
+import { Box, Typography } from "@mui/material";
+import { marked } from "marked";
 
-interface FileItem {
-    name: string;
-    url: string;
-}
 
-interface FileMessageBoxProps {
-    message: string;
-    files: FileItem[];
-}
+export default function MessageLine({
+  message,
+  files = [],
+  type,
+}: {
+  message: string;
+  files?: { name: string; url: string }[];
+  type: string;
+}) {
+  const isAI = type === "ai";
+  const htmlMessage = marked(message || "");
 
-const MessageLine: React.FC<FileMessageBoxProps> = ({ message, files }) => {
-    return (
-        <Box
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: isAI ? "flex-start" : "flex-end",
+        width: "100%",
+        mb: 1,
+      }}
+    >
+      <Box
+        sx={{
+          px: 2,
+          py: 1,
+          borderRadius: 2,
+          maxWidth: "70%",
+          bgcolor: isAI ? "transparent" : "#e0f7fa",
+          color: "text.primary",
+          border: isAI ? "1px solid #ccc" : "none",
+        }}
+      >
+        {isAI ? (
+          <Box
             sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                width: "100%",
+              fontSize: "0.95rem",
+              lineHeight: 1.6,
+              "& p": { margin: "8px 0" },
+              "& ul": { paddingLeft: "1.2em", margin: "8px 0" },
+              "& ol": { paddingLeft: "1.2em", margin: "8px 0" },
+              "& code": {
+                fontFamily: "monospace",
+                backgroundColor: "#f5f5f5",
+                px: 0.5,
+                borderRadius: 1,
+              },
+              "& pre": {
+                backgroundColor: "#f5f5f5",
+                padding: "8px",
+                borderRadius: 2,
+                overflowX: "auto",
+                fontFamily: "monospace",
+                fontSize: "0.85rem",
+              },
+              "& a": {
+                color: "#0072e5",
+                textDecoration: "underline",
+                wordBreak: "break-word",
+              },
             }}
-        >
-            <Box
+            dangerouslySetInnerHTML={{ __html: htmlMessage }}
+          />
+        ) : (
+          <Typography variant="body2">{message}</Typography>
+        )}
+
+        {files.length > 0 && (
+          <Box mt={1}>
+            {files.map((file, idx) => (
+              <Typography
+                key={idx}
+                variant="caption"
+                color="primary"
                 sx={{
-                    bgcolor: "#f0f2f5", // 🌫 nền xám nhạt
-                    p: 2,
-                    borderRadius: 2,
-                    maxWidth: "80%", // 👉 chiếm tối đa 80% container
-                    wordBreak: "break-word",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  "&:hover": {
+                    textDecoration: "underline",
+                  },
                 }}
-            >
-                <Typography
-                    variant="body2"
-                    sx={{ mb: 1, color: "text.secondary" }}
-                >
-                    {message}
-                </Typography>
-
-                <Stack spacing={1}>
-                    {files.map((file, idx) => (
-                        <Button
-                            key={idx}
-                            variant="outlined"
-                            startIcon={<InsertDriveFileIcon fontSize="small" />}
-                            endIcon={<LaunchIcon fontSize="small" />}
-                            sx={{
-                                textTransform: "none",
-                                borderColor: "#ddd",
-                                bgcolor: "#ffffff",
-                                color: "text.primary",
-                                borderRadius: 1,
-                                px: 1.5,
-                                py: 0.8,
-                                fontWeight: 500,
-                                fontSize: "0.875rem",
-                                justifyContent: "flex-start",
-                            }}
-                            href={file.url}
-                            target="_blank"
-                        >
-                            {file.name}
-                        </Button>
-                    ))}
-                </Stack>
-            </Box>
-        </Box>
-    );
-};
-
-export default MessageLine;
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = file.url;
+                  link.setAttribute("download", file.name);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(file.url);
+                }}
+              >
+                📎 {file.name}
+              </Typography>
+            ))}
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
+}
