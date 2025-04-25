@@ -7,6 +7,8 @@ import {
   ListItem,
   Tooltip,
   Typography,
+  ListItemButton,
+  ListItemText,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
@@ -60,7 +62,14 @@ export default function ChatPage() {
    }
  };
 
-
+ interface ChatHistoryItem {
+   id: string;
+   message: {
+     content: string;
+     type: string;
+   };
+ }
+ 
 const handleSend = async () => {
   const createId = () => Date.now() + Math.floor(Math.random() * 10000);
   if (!input.trim() && pendingFiles.length === 0) return;
@@ -81,6 +90,8 @@ const handleSend = async () => {
     });
   }
 
+
+   
   // Upload pending files
   const uploadedDocs: Message[] = [];
 
@@ -103,6 +114,8 @@ const handleSend = async () => {
     }
   }
 
+
+
   // Send message to AI agent
   if (input.trim() || uploadedDocs.length > 0) {
     try {
@@ -115,11 +128,13 @@ const handleSend = async () => {
 
       // ✅ Fetch latest conversation with AI response
       const updated = await getConversationById(selectedHistoryId);
-      const chatMessages = (updated.chat_history || []).map((item: any) => ({
-        id: item.id,
-        text: item.message.content,
-        type: item.message.type,
-      }));
+    const chatMessages = (updated.chat_history || []).map(
+       (item: ChatHistoryItem) => ({
+         id: item.id,
+         text: item.message.content,
+         type: item.message.type,
+       })
+     );
 
       setMessageHistories((prev) =>
         prev.map((h) =>
@@ -182,11 +197,13 @@ const handleSend = async () => {
     try {
       setSelectedHistoryId(id);
       const data = await getConversationById(id);
-      const chatMessages = (data.chat_history || []).map((item: any) => ({
-        id: item.id,
-        text: item.message.content,
-        type: item.message.type,
-      }));
+      const chatMessages = (data.chat_history || []).map(
+        (item: ChatHistoryItem) => ({
+          id: item.id,
+          text: item.message.content,
+          type: item.message.type,
+        })
+      );
     setSelectedSessionId(data.conversation.session_id);
       setMessageHistories((prev) =>
         prev.map((h) => (h.id === id ? { ...h, messages: chatMessages } : h))
@@ -208,15 +225,19 @@ const handleSend = async () => {
       console.error("Error fetching documents", err);
     }
   };
+  interface Conversation {
+    id: string;
+    conversation_name: string;
+  }
 
   const fetchConversations = async () => {
     try {
       const conversations = await getAllConversations();
-      const formatted = conversations.map((conv: any) => ({
-        id: conv.id,
-        title: conv.conversation_name,
-        messages: [],
-      }));
+const formatted = conversations.map((conv: Conversation) => ({
+  id: conv.id,
+  title: conv.conversation_name,
+  messages: [],
+}));
       setMessageHistories(formatted);
     } catch (err) {
       console.error("Failed to fetch conversations", err);
@@ -266,25 +287,24 @@ const handleSend = async () => {
         </Box>
         <List>
           {messageHistories.map((h) => (
-            <ListItem
-              key={h.id}
-              button
-              selected={h.id === selectedHistoryId}
-              onClick={() => handleSelectConversation(h.id)}
-              sx={{
-                borderRadius: 2,
-                mb: 1,
-                cursor: "pointer", // 👈 add cursor
-                "&.Mui-selected": {
-                  backgroundColor: "#000000", // black background when selected
-                  color: "#ffffff", // optional: white text on black
-                },
-                "&:hover": {
-                  backgroundColor: "#ffffff", // white background on hover
-                },
-              }}
-            >
-              {h.title}
+            <ListItem key={h.id} disableGutters disablePadding>
+              <ListItemButton
+                onClick={() => handleSelectConversation(h.id)}
+                selected={h.id === selectedHistoryId}
+                sx={{
+                  borderRadius: 2,
+                  mb: 1,
+                  "&.Mui-selected": {
+                    backgroundColor: "#000000",
+                    color: "#ffffff",
+                  },
+                  "&:hover": {
+                    backgroundColor: "#ffffff",
+                  },
+                }}
+              >
+                <ListItemText primary={h.title} />
+              </ListItemButton>
             </ListItem>
           ))}
         </List>
