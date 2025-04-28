@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
+import { Icon } from "@iconify/react"; // cần import thêm Icon
 import { marked } from "marked";
-
 
 export default function MessageLine({
   message,
@@ -35,35 +35,50 @@ export default function MessageLine({
         }}
       >
         {isAI ? (
-          <Box
-            sx={{
-              fontSize: "0.95rem",
-              lineHeight: 1.6,
-              "& p": { margin: "8px 0" },
-              "& ul": { paddingLeft: "1.2em", margin: "8px 0" },
-              "& ol": { paddingLeft: "1.2em", margin: "8px 0" },
-              "& code": {
-                fontFamily: "monospace",
-                backgroundColor: "#f5f5f5",
-                px: 0.5,
-                borderRadius: 1,
-              },
-              "& pre": {
-                backgroundColor: "#f5f5f5",
-                padding: "8px",
-                borderRadius: 2,
-                overflowX: "auto",
-                fontFamily: "monospace",
-                fontSize: "0.85rem",
-              },
-              "& a": {
-                color: "#0072e5",
-                textDecoration: "underline",
-                wordBreak: "break-word",
-              },
-            }}
-            dangerouslySetInnerHTML={{ __html: htmlMessage }}
-          />
+          message === "..." ? ( // ✅ Không dùng {} ngoài
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              <Icon icon="eos-icons:loading" width="24" height="24" />
+              <Typography variant="body2" sx={{ fontStyle: "italic" }}>
+                AI đang trả lời...
+              </Typography>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                fontSize: "0.95rem",
+                lineHeight: 1.6,
+                "& p": { margin: "8px 0" },
+                "& ul": { paddingLeft: "1.2em", margin: "8px 0" },
+                "& ol": { paddingLeft: "1.2em", margin: "8px 0" },
+                "& code": {
+                  fontFamily: "monospace",
+                  backgroundColor: "#f5f5f5",
+                  px: 0.5,
+                  borderRadius: 1,
+                },
+                "& pre": {
+                  backgroundColor: "#f5f5f5",
+                  padding: "8px",
+                  borderRadius: 2,
+                  overflowX: "auto",
+                  fontFamily: "monospace",
+                  fontSize: "0.85rem",
+                },
+                "& a": {
+                  color: "#0072e5",
+                  textDecoration: "underline",
+                  wordBreak: "break-word",
+                },
+              }}
+              dangerouslySetInnerHTML={{ __html: htmlMessage }}
+            />
+          )
         ) : (
           <Typography variant="body2">{message}</Typography>
         )}

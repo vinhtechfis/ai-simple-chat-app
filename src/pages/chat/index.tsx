@@ -25,76 +25,80 @@ import {
 import {
   getAllDocuments,
   uploadDocumentByConversation,
+  uploadDocuments,
 } from "../../service/documents";
 
 import NewChatModal from "./components/NewChatModal";
 
 export default function ChatPage() {
   const [messageHistories, setMessageHistories] = useState<
-    { id: number; title: string; messages: Message[] }[]
+  { id: string; title: string; messages: Message[] }[]
   >([]);
-  const [selectedHistoryId, setSelectedHistoryId] = useState<number | null>(
-    null
-  );
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string>();
   const [input, setInput] = useState("");
   const [pendingFiles, setPendingFiles] = useState<Message[]>([]);
   const [files, setFiles] = useState<Message[]>([]);
   const [documents, setDocuments] = useState([]);
   const [openModal, setOpenModal] = useState(false);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [openKnowledgeBase, setOpenKnowledgeBase] = useState(false);
 
+
+   const createId = () =>
+     (Date.now() + Math.floor(Math.random() * 10000)).toString();
 
   const selectedHistory = messageHistories.find(
     (h) => h.id === selectedHistoryId
   );
   const messages = selectedHistory?.messages || [];
 
- const handleCreateNewChat = async (title: string) => {
-   try {
-     const response = await createConversation({ conversation_name: title });
-     const newId = response.data.conversation.id;
+  const handleCreateNewChat = async (title: string) => {
+    try {
+      const response = await createConversation({ conversation_name: title });
+      const newId = response.data.conversation.id;
 
-     await fetchConversations();
+      await fetchConversations();
 
-     handleSelectConversation(newId);
-   } catch (err) {
-     console.error("Failed to create new chat", err);
-   }
- };
+      handleSelectConversation(newId);
+    } catch (err) {
+      console.error("Failed to create new chat", err);
+    }
+  };
 
- interface ChatHistoryItem {
-   id: string;
-   message: {
-     content: string;
-     type: string;
-   };
- }
- 
+  interface ChatHistoryItem {
+    id: string;
+    message: {
+      content: string;
+      type: string;
+    };
+  }
+
 const handleSend = async () => {
-  const createId = () => Date.now() + Math.floor(Math.random() * 10000);
-  if (!input.trim() && pendingFiles.length === 0) return;
+  const createId = () =>
+    (Date.now() + Math.floor(Math.random() * 10000)).toString();
+  const trimmedInput = input.trim();
+
+  if (!trimmedInput && pendingFiles.length === 0) return;
 
   if (!selectedHistoryId) {
     console.warn("No conversation selected.");
     return;
   }
 
+  setLoadingAI(true);
+
   const newMessages: Message[] = [];
 
-  // Handle user text input
-  if (input.trim()) {
+  if (trimmedInput) {
     newMessages.push({
       id: createId(),
-      text: input,
+      text: trimmedInput,
       type: "text",
     });
   }
 
-
-   
-  // Upload pending files
   const uploadedDocs: Message[] = [];
-
   for (const fileMsg of pendingFiles) {
     if (fileMsg.file) {
       try {
@@ -114,54 +118,52 @@ const handleSend = async () => {
     }
   }
 
-
-
-  // Send message to AI agent
-  if (input.trim() || uploadedDocs.length > 0) {
-    try {
-      const firstFile = uploadedDocs[0]?.file;
-      await sendMessageToAIAgent(
-        input.trim(),
-        selectedSessionId ?? "",
-        firstFile
-      );
-
-      // ✅ Fetch latest conversation with AI response
-      const updated = await getConversationById(selectedHistoryId);
-    const chatMessages = (updated.chat_history || []).map(
-       (item: ChatHistoryItem) => ({
-         id: item.id,
-         text: item.message.content,
-         type: item.message.type,
-       })
-     );
-
-      setMessageHistories((prev) =>
-        prev.map((h) =>
-          h.id === selectedHistoryId ? { ...h, messages: chatMessages } : h
-        )
-      );
-    } catch (err) {
-      console.error("Failed to send message to AI agent or refresh chat", err);
-    }
-  }
-
-  // Update drawer files and clear input
-  setPendingFiles([]);
-  setInput("");
-
   try {
-    const docs = await getAllDocuments();
-    setDocuments(docs);
+    const firstFile = uploadedDocs[0]?.file;
+
+    await sendMessageToAIAgent(
+      trimmedInput,
+      selectedSessionId ?? "",
+      firstFile
+    );
+
+    // 🚨 FIX: phải fetch bằng selectedHistoryId, không phải sessionId
+    const data = await getConversationById(selectedHistoryId);
+
+    const chatMessages = (data.chat_history || []).map(
+      (item: ChatHistoryItem) => ({
+        id: item.id,
+        text: item.message.content,
+        type: item.message.type === "human" ? "text" : "text", // 🚨 luôn ép về "text"
+      })
+    );
+
+    setSelectedSessionId(data.conversation.session_id);
+
+    setMessageHistories((prev) =>
+      prev.map((h) =>
+        h.id === selectedHistoryId ? { ...h, messages: chatMessages } : h
+      )
+    );
   } catch (err) {
-    console.error("Failed to refresh document list", err);
+    console.error("Failed to send message to AI agent or refresh chat", err);
+  } finally {
+    setPendingFiles([]);
+    setInput("");
+    setLoadingAI(false);
+
+    try {
+      const docs = await getAllDocuments();
+      setDocuments(docs);
+    } catch (err) {
+      console.error("Failed to refresh document list", err);
+    }
   }
 };
 
 
   const handleButtonUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files;
-    const createId = () => Date.now() + Math.floor(Math.random() * 10000);
     if (selected) {
       const newFiles: Message[] = Array.from(selected).map(
         (file) =>
@@ -176,44 +178,56 @@ const handleSend = async () => {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files;
-    const createId = () => Date.now() + Math.floor(Math.random() * 10000);
     if (selected) {
-      const newFiles: Message[] = Array.from(selected).map(
-        (file) =>
-          ({
+      const newFiles: Message[] = [];
+
+      for (const file of Array.from(selected)) {
+        try {
+          const uploaded = await uploadDocuments(file);
+
+          newFiles.push({
             id: createId(),
-            text: file.name,
+            text: uploaded.document_name,
             type: "file",
             file,
-          } as Message)
-      );
-      setFiles((prev) => [...prev, ...newFiles]);
+          });
+        } catch (error) {
+          console.error("Failed to upload file:", error);
+        }
+      }
+
+      try {
+        const docs = await getAllDocuments();
+        setDocuments(docs);
+      } catch (err) {
+        console.error("Failed to refresh document list after upload", err);
+      }
     }
   };
 
-  const handleSelectConversation = async (id: number) => {
-    try {
-      setSelectedHistoryId(id);
-      const data = await getConversationById(id);
-      const chatMessages = (data.chat_history || []).map(
-        (item: ChatHistoryItem) => ({
-          id: item.id,
-          text: item.message.content,
-          type: item.message.type,
-        })
-      );
-    setSelectedSessionId(data.conversation.session_id);
-      setMessageHistories((prev) =>
-        prev.map((h) => (h.id === id ? { ...h, messages: chatMessages } : h))
-      );
-    } catch (err) {
-      console.error("Failed to load chat history", err);
-    }
-  };
+ const handleSelectConversation = async (id: string) => {
+   try {
+     setSelectedHistoryId(id);
+     const data = await getConversationById(id);
+     const chatMessages = (data.chat_history || []).map(
+       (item: ChatHistoryItem) => ({
+         id: item.id,
+         text: item.message.content,
+         type: item.message.type,
+       })
+     );
+     setSelectedSessionId(data.conversation.session_id);
+     setMessageHistories((prev) =>
+       prev.map((h) => (h.id === id ? { ...h, messages: chatMessages } : h))
+     );
+   } catch (err) {
+     console.error("Failed to load chat history", err);
+   }
+ };
 
-  const handleDeleteFile = (id: number) => {
+  const handleDeleteFile = (id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
@@ -225,6 +239,7 @@ const handleSend = async () => {
       console.error("Error fetching documents", err);
     }
   };
+
   interface Conversation {
     id: string;
     conversation_name: string;
@@ -233,11 +248,11 @@ const handleSend = async () => {
   const fetchConversations = async () => {
     try {
       const conversations = await getAllConversations();
-const formatted = conversations.map((conv: Conversation) => ({
-  id: conv.id,
-  title: conv.conversation_name,
-  messages: [],
-}));
+      const formatted = conversations.map((conv: Conversation) => ({
+        id: conv.id,
+        title: conv.conversation_name,
+        messages: [],
+      }));
       setMessageHistories(formatted);
     } catch (err) {
       console.error("Failed to fetch conversations", err);
@@ -311,8 +326,8 @@ const formatted = conversations.map((conv: Conversation) => ({
       </Box>
 
       {/* Middle: Chat Content */}
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2 }}>
-        <MessageList messages={messages} />
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, mr:10 }}>
+        <MessageList messages={messages} loadingAI={loadingAI} />
         <Box sx={{ display: "flex", gap: 1, mt: "auto", alignItems: "center" }}>
           <TextField
             fullWidth
@@ -374,15 +389,64 @@ const formatted = conversations.map((conv: Conversation) => ({
         )}
       </Box>
 
-      {/* Right Drawer: File Manager */}
-      <Box sx={{ width: 300, borderLeft: "1px solid #ccc", p: 2 }}>
-        <FileDrawer
-          files={files}
-          documents={documents}
-          onFileUpload={handleFileUpload}
-          onDeleteFile={handleDeleteFile}
-        />
+      <Box>
+        {" "}
+        <IconButton
+          sx={{
+            position: "fixed",
+            bottom: 32,
+            right: 32,
+            bgcolor: "primary.main",
+            color: "white",
+            "&:hover": { bgcolor: "primary.dark" },
+            width: 60,
+            height: 60,
+            boxShadow: 6,
+          }}
+          onClick={() => setOpenKnowledgeBase(true)}
+        >
+          <Icon icon="fluent:document-48-regular" width="28" height="28" />
+        </IconButton>
       </Box>
+
+      {openKnowledgeBase && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+          onClick={() => setOpenKnowledgeBase(false)}
+        >
+          <Box
+            sx={{
+              width: 300,
+              maxHeight: "80vh",
+              backgroundColor: "white",
+              borderRadius: 3,
+              p: 2,
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Render lại FileDrawer bên trong Modal */}
+            <FileDrawer
+              files={files}
+              documents={documents}
+              onFileUpload={handleFileUpload}
+              onDeleteFile={handleDeleteFile}
+            />
+          </Box>
+        </Box>
+      )}
+
       <NewChatModal
         open={openModal}
         onClose={() => setOpenModal(false)}

@@ -65,14 +65,14 @@ export default function NewChatModal({
           variant="text"
           sx={{ color: "#1976d2", fontWeight: 600 }}
         >
-          CANCEL
+          Hủy
         </Button>
         <Button
           onClick={handleCreate}
           variant="contained"
           sx={{ fontWeight: 600 }}
         >
-          CREATE
+          Tạo
         </Button>
       </DialogActions>
     </Dialog>

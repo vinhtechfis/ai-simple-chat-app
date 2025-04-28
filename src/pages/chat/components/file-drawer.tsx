@@ -19,12 +19,12 @@ export default function FileDrawer({
 }: {
   files: Message[];
   documents: {
-    id: number;
+    id: string;
     document_name: string;
     url: string;
   }[];
   onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onDeleteFile: (id: number) => void;
+  onDeleteFile: (id: string) => void;
 }) {
   return (
     <Box sx={{ width: 300 }}>
