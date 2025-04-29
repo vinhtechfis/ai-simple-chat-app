@@ -1,7 +1,6 @@
 import axios from "axios";
 
-const BASE_URL =
-  "https://widely-tolerant-gopher.ngrok-free.app/api/n8n/documents";
+const BASE_URL = "http://103.157.218.115:8854/api/n8n/documents";
 
 /**
  * Get all documents
@@ -20,7 +19,7 @@ export const uploadDocumentByConversation = async (conversationId: string, file:
   formData.append("file", file);
 
   const response = await axios.post(
-    `https://widely-tolerant-gopher.ngrok-free.app/api/n8n/conversation/${conversationId}/document`,
+    `http://103.157.218.115:8854/api/n8n/conversation/${conversationId}/document`,
     formData,
     {
       headers: {
@@ -39,9 +38,10 @@ export const uploadDocuments = async (
 ) => {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("sessionId", "techfis-ai-vector-store");
 
   const response = await axios.post(
-    `https://widely-tolerant-gopher.ngrok-free.app/api/n8n/documents`,
+    `http://103.157.218.115:5678/webhook/send-message-ai-agent`,
     formData,
     {
       headers: {
