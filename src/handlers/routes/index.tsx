@@ -6,7 +6,7 @@ import ChatPage from '../../pages/chat'
 
 export default function AppRouter() {
   return (
-    <BrowserRouter basename="/ai-simple-chat-app/">
+    <BrowserRouter>
       <Routes>
         {/* <Route path="/" element={<App />} /> */}
         <Route path="/" element={<ChatPage />} />
