@@ -127,14 +127,13 @@ const handleSend = async () => {
       firstFile
     );
 
-    // 🚨 FIX: phải fetch bằng selectedHistoryId, không phải sessionId
     const data = await getConversationById(selectedHistoryId);
 
     const chatMessages = (data.chat_history || []).map(
       (item: ChatHistoryItem) => ({
         id: item.id,
         text: item.message.content,
-        type: item.message.type === "human" ? "text" : "text", // 🚨 luôn ép về "text"
+        type: item.message.type, 
       })
     );
 

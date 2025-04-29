@@ -1,7 +1,6 @@
 import axios from "axios";
 
-const BASE_URL =
-  "https://widely-tolerant-gopher.ngrok-free.app/api/n8n/conversation";
+const BASE_URL = "http://103.157.218.115:8854/api/n8n/conversation";
 
 export const getAllConversations = async () => {
   const response = await axios.get(BASE_URL, {
@@ -67,7 +66,7 @@ export const sendMessageToAIAgent = async (
   }
 
   const response = await axios.post(
-    "https://vinhtechfis.app.n8n.cloud/webhook/send-message-ai-agent",
+    "http://103.157.218.115:5678/webhook/send-message-ai-agent",
     formData,
     {
       headers: {
