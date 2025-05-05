@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 import { List, ListItem } from "@mui/material";
 import { Message } from "../../../models/types";
 import MessageLine from "./message-line";
@@ -7,10 +9,17 @@ export default function MessageList({
   loadingAI,
 }: {
   messages: Message[];
-  loadingAI?: boolean; // ✅ thêm prop loadingAI
+  loadingAI?: boolean;
 }) {
+ const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    // as soon as messages change (or a new chat is selected)
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   return (
-    <List sx={{ overflowY: "auto", flex: 1, pr: 1 }}>
+    <List sx={{ overflowY: "auto", flex: 1, px: 15 }}>
       {messages.map((msg) => {
         const files = [];
         if (msg.file) {
@@ -23,8 +32,7 @@ export default function MessageList({
           </ListItem>
         );
       })}
-
-      {/* Nếu đang loading AI thì hiện thêm dòng Loading */}
+      <div ref={bottomRef} />
       {loadingAI && (
         <ListItem disableGutters>
           <MessageLine message={"..."} type="ai" />

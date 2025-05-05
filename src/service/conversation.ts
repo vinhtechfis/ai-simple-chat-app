@@ -44,10 +44,11 @@ export const updateConversation = async (
   return response.data;
 };
 
-export const deleteConversation = async (id: number) => {
+export const deleteConversation = async (id: string) => {
   const response = await axios.delete(`${BASE_URL}/${id}`, {
     headers: {
       "ngrok-skip-browser-warning": "1",
+      "Content-Type": "application/json",
     },
   });
   return response.data;

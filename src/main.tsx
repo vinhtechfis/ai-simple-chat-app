@@ -1,10 +1,12 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import AppRouter from './handlers/routes'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import AppRouter from "./handlers/routes";
+import { SnackbarProvider } from "notistack";
 
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <AppRouter />
-  </React.StrictMode>,
-)
+    <SnackbarProvider maxSnack={3} preventDuplicate>
+      <AppRouter />
+    </SnackbarProvider>
+  </React.StrictMode>
+);

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useSnackbar } from "notistack";
 import {
   Box,
-  TextField,
+  // TextField,
   IconButton,
   List,
   ListItem,
@@ -9,6 +10,14 @@ import {
   Typography,
   ListItemButton,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputBase,
+  Menu, 
+  MenuItem,
+  Button,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
@@ -21,16 +30,22 @@ import {
   getConversationById,
   sendMessageToAIAgent,
   createConversation,
+  deleteConversation,
 } from "../../service/conversation";
 import {
   getAllDocuments,
   uploadDocumentByConversation,
   uploadDocuments,
 } from "../../service/documents";
-
 import NewChatModal from "./components/NewChatModal";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+
 
 export default function ChatPage() {
+
+  const { enqueueSnackbar } = useSnackbar();
+
   const [messageHistories, setMessageHistories] = useState<
   { id: string; title: string; messages: Message[] }[]
   >([]);
@@ -43,6 +58,10 @@ export default function ChatPage() {
   const [openModal, setOpenModal] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
   const [openKnowledgeBase, setOpenKnowledgeBase] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [toDeleteId, setToDeleteId] = useState<string | null>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuForId, setMenuForId] = useState<string | null>(null);
 
 
    const createId = () =>
@@ -87,6 +106,8 @@ const handleSend = async () => {
   }
 
   setLoadingAI(true);
+  setPendingFiles([]);
+  setInput("");
 
   const newMessages: Message[] = [];
 
@@ -118,6 +139,17 @@ const handleSend = async () => {
     }
   }
 
+  setMessageHistories((prev) =>
+    prev.map((h) =>
+      h.id === selectedHistoryId
+        ? {
+            ...h,
+            messages: [...h.messages, ...newMessages, ...uploadedDocs],
+          }
+        : h
+    )
+  );
+
   try {
     const firstFile = uploadedDocs[0]?.file;
 
@@ -144,11 +176,10 @@ const handleSend = async () => {
         h.id === selectedHistoryId ? { ...h, messages: chatMessages } : h
       )
     );
+
   } catch (err) {
     console.error("Failed to send message to AI agent or refresh chat", err);
   } finally {
-    setPendingFiles([]);
-    setInput("");
     setLoadingAI(false);
 
     try {
@@ -258,6 +289,48 @@ const handleSend = async () => {
     }
   };
 
+  const handleOpenMenu = (evt: React.MouseEvent<HTMLElement>, id: string) => {
+    evt.stopPropagation();
+    setMenuAnchorEl(evt.currentTarget);
+    setMenuForId(id);
+  };
+  // close the menu
+  const handleCloseMenu = () => {
+    setMenuAnchorEl(null);
+    setMenuForId(null);
+  };
+  // when user picks “Delete” from the menu, show the dialog
+  const handleMenuDelete = () => {
+    if (menuForId) {
+      setToDeleteId(menuForId);
+      setDeleteDialogOpen(true);
+    }
+    handleCloseMenu();
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setToDeleteId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!toDeleteId) return;
+    try {
+      await deleteConversation(toDeleteId);
+      // remove from local state so the UI updates
+      setMessageHistories((prev) => prev.filter((h) => h.id !== toDeleteId));
+      // if the deleted chat was selected, you may want to clear selectedHistoryId
+      if (selectedHistoryId === toDeleteId) {
+        setSelectedHistoryId(null);
+      }
+    } catch {
+      // show an error notification
+      enqueueSnackbar("Xóa cuộc trò chuyện thất bại", { variant: "error" });
+    } finally {
+      handleCloseDeleteDialog();
+    }
+  };
+
   useEffect(() => {
     fetchConversations();
     fetchDocuments();
@@ -268,17 +341,15 @@ const handleSend = async () => {
       sx={{
         display: "flex",
         height: "98vh",
-        // border: "1px solid #ccc",
-        // boxShadow: 3,
-        // borderRadius: 2,
         overflow: "hidden",
       }}
     >
       {/* Left Panel */}
-      <Box sx={{ width: 250, bgcolor: "#f4f4f4", p: 2 }}>
+      <Box sx={{ width: 250, bgcolor: "#F9F9F9", p: 2 }}>
         <Box
           sx={{
             display: "flex",
+            alignItems: "center",
             justifyContent: "space-between",
             mb: 2,
           }}
@@ -286,35 +357,72 @@ const handleSend = async () => {
           <Typography variant="h6" sx={{ fontWeight: "bold" }}>
             AI Chat
           </Typography>
-          <Tooltip title="New Chat">
+          <Tooltip
+            title="New Chat"
+            componentsProps={{
+              tooltip: {
+                sx: {
+                  backgroundColor: "black",
+                  color: "white",
+                  fontSize: 14,
+                },
+              },
+            }}
+          >
             <IconButton
               onClick={() => setOpenModal(true)}
               sx={{
                 backgroundColor: "#f5f8fb",
-                "&:hover": { backgroundColor: "#eef3f7" },
+                "&:hover": { backgroundColor: "#ECECEC" },
                 borderRadius: 2,
               }}
             >
-              <Icon icon="akar-icons:edit" width="20" height="20" />
+              <Icon icon="akar-icons:edit" width="24" height="24" />
             </IconButton>
           </Tooltip>
         </Box>
         <List>
           {messageHistories.map((h) => (
-            <ListItem key={h.id} disableGutters disablePadding>
+            <ListItem
+              key={h.id}
+              disableGutters
+              disablePadding
+              // only show the action-button on hover
+              sx={{
+                position: "relative",
+                "&:hover .action-button": { visibility: "visible" },
+              }}
+              secondaryAction={
+                <IconButton
+                  className="action-button"
+                  size="small"
+                  onClick={(e) => handleOpenMenu(e, h.id)}
+                  sx={{
+                    visibility: "hidden",
+                    // border: "1px solid",
+                    borderColor: "divider",
+                    width: 32,
+                    height: 24,
+                    borderRadius: 12,
+                    mr:1
+                  }}
+                >
+                  <MoreHorizIcon fontSize="small" />
+                </IconButton>
+              }
+            >
               <ListItemButton
                 onClick={() => handleSelectConversation(h.id)}
                 selected={h.id === selectedHistoryId}
                 sx={{
                   borderRadius: 2,
                   mb: 1,
+                  pr: 6,
                   "&.Mui-selected": {
-                    backgroundColor: "#000000",
-                    color: "#ffffff",
+                    backgroundColor: "#ECECEC",
+                    color: "#000",
                   },
-                  "&:hover": {
-                    backgroundColor: "#ffffff",
-                  },
+                  "&:hover": { backgroundColor: "#ECECEC" },
                 }}
               >
                 <ListItemText primary={h.title} />
@@ -325,24 +433,106 @@ const handleSend = async () => {
       </Box>
 
       {/* Middle: Chat Content */}
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, mr:10 }}>
+      <Box
+        sx={{ flex: 1, display: "flex", flexDirection: "column", p: 2, mr: 10 }}
+      >
         <MessageList messages={messages} loadingAI={loadingAI} />
-        <Box sx={{ display: "flex", gap: 1, mt: "auto", alignItems: "center" }}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder={"Type a message..."}
-          />
-          <IconButton color="primary" component="label">
-            <AttachFileIcon />
-            <input type="file" hidden multiple onChange={handleButtonUpload} />
-          </IconButton>
-          <IconButton color="primary" onClick={handleSend}>
-            <SendIcon />
-          </IconButton>
+        <Box
+          sx={{
+            mt: "auto",
+            py: 1.5,
+            px: 2,
+            // borderTop: "1px solid #e0e0e0",
+            display: "flex",
+            justifyContent: "center",
+            backgroundColor: "#fff",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              maxWidth: 1020,
+              bgcolor: "#ffffff",
+              borderRadius: "28px",
+              border: "1px solid #e0e0e0",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+              px: 2,
+              py: 1,
+            }}
+          >
+            <InputBase
+              fullWidth
+              placeholder="Ask anything"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              sx={{
+                ml: 1,
+                flex: 1,
+                fontSize: "0.95rem",
+              }}
+            />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <IconButton
+                component="label"
+                size="small"
+                sx={{
+                  border: "1px solid #e0e0e0",
+                  borderColor: "divider",
+                  borderRadius: "28px",
+                  width: 36,
+                  height: 36,
+                  p: 0.5, // inner padding
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                  },
+                }}
+              >
+                <AttachFileIcon fontSize="small" />
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  onChange={handleButtonUpload}
+                />
+              </IconButton>
+
+              {/* Optional Buttons - mimic ChatGPT UI */}
+              {/* <IconButton
+                size="small"
+                sx={{ bgcolor: "#f1f1f1", borderRadius: 3 }}
+              >
+                <Typography variant="caption">Search</Typography>
+              </IconButton> */}
+              {/* <IconButton
+                size="small"
+                sx={{ bgcolor: "#f1f1f1", borderRadius: 3 }}
+              >
+                <Typography variant="caption">Deep research</Typography>
+              </IconButton>
+              <IconButton
+                size="small"
+                sx={{ bgcolor: "#f1f1f1", borderRadius: 3 }}
+              >
+                <Typography variant="caption">Create image</Typography>
+              </IconButton> */}
+
+              {/* Send Button */}
+              <IconButton
+                color="primary"
+                onClick={handleSend}
+                sx={{
+                  bgcolor: "black",
+                  color: "white",
+                  "&:hover": { bgcolor: "#333" },
+                }}
+              >
+                <SendIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
         </Box>
 
         {/* File Preview Before Sending */}
@@ -451,6 +641,33 @@ const handleSend = async () => {
         onClose={() => setOpenModal(false)}
         onCreate={handleCreateNewChat}
       />
+
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleCloseMenu}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{ sx: { borderRadius: 2, minWidth: 160 } }}
+      >
+        <MenuItem onClick={handleMenuDelete} sx={{ color: "error.main" }}>
+          <DeleteOutlineIcon fontSize="small" sx={{ mr: 1 }} />
+          Delete chat
+        </MenuItem>
+      </Menu>
+
+      <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Xóa cuộc trò chuyện</DialogTitle>
+        <DialogContent>
+          Bạn có chắc muốn xóa cuộc trò chuyện này không?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog}>Hủy</Button>
+          <Button color="error" onClick={handleConfirmDelete}>
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
