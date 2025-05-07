@@ -5,53 +5,80 @@ import { EChartsOption } from "echarts";
 import { Icon } from "@iconify/react";
 import { marked } from "marked";
 
-interface ChartData {
-  xAxis: {
+// Define types
+type PieDataItem = { value: number; name: string };
+type BarOrLineData = number[];
+
+type ChartSeriesItem = {
+  name: string;
+  type: "bar" | "line";
+  data: BarOrLineData;
+};
+
+type PieSeriesItem = {
+  name: string;
+  type: "pie";
+  data: PieDataItem[];
+  radius?: string;
+};
+
+type ChartData = {
+  xAxis?: {
+    type: "category";
     data: string[];
   };
-  series: Array<{
-    name: string;
-    data: number[];
-    type: "bar" | "line" | "pie";
-  }>;
-}
+  yAxis?: {
+    type: "value";
+  };
+  series: (ChartSeriesItem | PieSeriesItem)[];
+};
 
 const ChartComponent = ({ data }: { data: ChartData }) => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
     if (data) {
-      setChartData({
-        xAxis: data.xAxis,
-        series: data.series.map((item) => ({
-          name: item.name,
-          data: item.data,
-          type: item.type,
-        })),
-      });
+      setChartData(data);
     }
   }, [data]);
 
-  const chartOptions: EChartsOption = {
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-    },
-    xAxis: {
-      type: "category",
-      data: chartData?.xAxis.data || [],
-    },
-    yAxis: {
-      type: "value",
-    },
-    series: chartData?.series || [],
-  };
+  if (!chartData) return null;
 
-  return (
-    <Box>
-      <ReactECharts option={chartOptions} style={{ height: "400px" }} />
-    </Box>
-  );
+  const isPie = chartData.series[0].type === "pie";
+
+  const chartOptions: EChartsOption = isPie
+    ? {
+        tooltip: {
+          trigger: "item",
+        },
+        legend: {
+          top: "bottom",
+        },
+        series: chartData.series.map((s) => ({
+          ...s,
+          type: "pie",
+          radius: (s as PieSeriesItem).radius || "50%",
+          label: {
+            formatter: "{b}: {c} ({d}%)",
+          },
+        })),
+      }
+    : {
+        tooltip: {
+          trigger: "axis",
+          axisPointer: { type: "shadow" },
+        },
+        xAxis: chartData.xAxis || {
+          type: "category",
+          data: [],
+        },
+        yAxis: chartData.yAxis || {
+          type: "value",
+        },
+        series: chartData.series,
+      };
+
+  return <ReactECharts option={chartOptions} style={{ height: "400px" }} />;
 };
 
 export default function MessageLine({
@@ -69,6 +96,31 @@ export default function MessageLine({
   let afterJSON = "";
   let hasChart = false;
 
+  // try {
+  //   const jsonRegex = /```json\s*([\s\S]*?)```/i;
+  //   const fallbackRegex = /({[\s\S]*})/;
+
+  //   const jsonMatch = message.match(jsonRegex) || message.match(fallbackRegex);
+
+  //   if (jsonMatch) {
+  //     const fullMatch = jsonMatch[0];
+  //     const jsonString = jsonMatch[1] || jsonMatch[0];
+
+  //     const parsed = JSON.parse(jsonString.trim());
+  //     if (parsed?.xAxis?.data && parsed?.series) {
+  //       parsedChartData = parsed;
+  //       hasChart = true;
+
+  //       const splitIndex = message.indexOf(fullMatch);
+  //       beforeJSON = message.slice(0, splitIndex);
+  //       afterJSON = message.slice(splitIndex + fullMatch.length);
+  //     }
+  //   }
+  // } catch (e) {
+  //   console.warn("Failed to parse chart JSON:", e);
+  // }
+
+
   try {
     const jsonRegex = /```json\s*([\s\S]*?)```/i;
     const fallbackRegex = /({[\s\S]*})/;
@@ -80,7 +132,14 @@ export default function MessageLine({
       const jsonString = jsonMatch[1] || jsonMatch[0];
 
       const parsed = JSON.parse(jsonString.trim());
-      if (parsed?.xAxis?.data && parsed?.series) {
+
+      // Kiểm tra điều kiện hợp lệ cho pie hoặc bar/line
+      const isValidPie =
+        parsed?.series?.[0]?.type === "pie" && Array.isArray(parsed.series);
+      const isValidBarLine =
+        parsed?.xAxis?.data && Array.isArray(parsed.series);
+
+      if (isValidPie || isValidBarLine) {
         parsedChartData = parsed;
         hasChart = true;
 
@@ -92,7 +151,6 @@ export default function MessageLine({
   } catch (e) {
     console.warn("Failed to parse chart JSON:", e);
   }
-
 
 
   return (
