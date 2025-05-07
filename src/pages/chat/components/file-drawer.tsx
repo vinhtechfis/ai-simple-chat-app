@@ -126,6 +126,7 @@ export default function FileDrawer({
             <Typography
               variant="body2"
               sx={{
+                fontFamily: `'Roboto', 'Arial', 'Helvetica', 'sans-serif', 'Noto Sans'`,
                 maxWidth: 300,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -172,7 +173,7 @@ export default function FileDrawer({
                 variant="body2"
                 sx={{
                   flex: 1,
-                  wordBreak: "break-word", 
+                  wordBreak: "break-word",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                 }}
@@ -218,6 +219,7 @@ export default function FileDrawer({
               <Typography
                 variant="body2"
                 sx={{
+                  fontFamily: `'Roboto', 'Arial', 'Helvetica', 'sans-serif', 'Noto Sans'`,
                   maxWidth: 120,
                   whiteSpace: "nowrap",
                   overflow: "hidden",
