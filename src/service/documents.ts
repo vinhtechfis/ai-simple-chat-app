@@ -1,17 +1,42 @@
 import axios from "axios";
 
-const BASE_URL = "http://103.157.218.115:8854/api/n8n/documents";
+const BASE_URL = "http://103.157.218.115:8854";
 
 /**
  * Get all documents
  */
 export const getAllDocuments = async () => {
-  const response = await axios.get(BASE_URL, {
-    headers: {
-      "ngrok-skip-browser-warning": "1",
-    },
-  });
-  return response.data?.data?.documents || [];
+  try {
+    const response = await axios.get(`${BASE_URL}/api/n8n/documents`, {
+      headers: { "ngrok-skip-browser-warning": "1" },
+    });
+    return response.data?.data?.documents || [];
+  } catch (error) {
+    console.error("Failed to fetch documents:", error);
+    return [];
+  }
+};
+
+export const uploadPatchDocuments = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/api/n8n/documents`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "ngrok-skip-browser-warning": "1",
+        },
+      }
+    );
+    return response.data?.data?.document;
+  } catch (error) {
+    console.error("Failed to upload document:", error);
+    throw error;
+  }
 };
 
 export const uploadDocumentByConversation = async (conversationId: string, file: File) => {
@@ -19,7 +44,7 @@ export const uploadDocumentByConversation = async (conversationId: string, file:
   formData.append("file", file);
 
   const response = await axios.post(
-    `http://103.157.218.115:8854/api/n8n/conversation/${conversationId}/document`,
+    `${BASE_URL}/api/n8n/conversation/${conversationId}/document`,
     formData,
     {
       headers: {

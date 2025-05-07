@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const BASE_URL = "http://103.157.218.115:8854/api/n8n/conversation";
+const BASE_URL = "http://103.157.218.115:8854";
 
 export const getAllConversations = async () => {
-  const response = await axios.get(BASE_URL, {
+  const response = await axios.get(`${BASE_URL}/api/n8n/conversation`, {
     headers: {
       "ngrok-skip-browser-warning": "1",
     },
@@ -12,7 +12,7 @@ export const getAllConversations = async () => {
 };
 
 export const getConversationById = async (id: string) => {
-  const response = await axios.get(`${BASE_URL}/${id}`, {
+  const response = await axios.get(`${BASE_URL}/api/n8n/conversation/${id}`, {
     headers: {
       "ngrok-skip-browser-warning": "1",
     },
@@ -21,11 +21,15 @@ export const getConversationById = async (id: string) => {
 };
 
 export const createConversation = async (payload: { conversation_name: string }) => {
-  const response = await axios.post(BASE_URL, payload, {
-    headers: {
-      "ngrok-skip-browser-warning": "1",
-    },
-  });
+  const response = await axios.post(
+    `${BASE_URL}/api/n8n/conversation`,
+    payload,
+    {
+      headers: {
+        "ngrok-skip-browser-warning": "1",
+      },
+    }
+  );
   return response.data;
 };
 
@@ -36,21 +40,28 @@ export const updateConversation = async (
     session_id?: string;
   }
 ) => {
-  const response = await axios.put(`${BASE_URL}/${id}`, updates, {
-    headers: {
-      "ngrok-skip-browser-warning": "1",
-    },
-  });
+  const response = await axios.put(
+    `${BASE_URL}/api/n8n/conversation/${id}`,
+    updates,
+    {
+      headers: {
+        "ngrok-skip-browser-warning": "1",
+      },
+    }
+  );
   return response.data;
 };
 
 export const deleteConversation = async (id: string) => {
-  const response = await axios.delete(`${BASE_URL}/${id}`, {
-    headers: {
-      "ngrok-skip-browser-warning": "1",
-      "Content-Type": "application/json",
-    },
-  });
+  const response = await axios.delete(
+    `${BASE_URL}/api/n8n/conversation/${id}`,
+    {
+      headers: {
+        "ngrok-skip-browser-warning": "1",
+        "Content-Type": "application/json",
+      },
+    }
+  );
   return response.data;
 };
 

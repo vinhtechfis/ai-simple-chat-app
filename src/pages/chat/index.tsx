@@ -33,9 +33,9 @@ import {
   deleteConversation,
 } from "../../service/conversation";
 import {
-  getAllDocuments,
+  // getAllDocuments,
   uploadDocumentByConversation,
-  uploadDocuments,
+  // uploadDocuments,
 } from "../../service/documents";
 import NewChatModal from "./components/NewChatModal";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
@@ -54,7 +54,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [pendingFiles, setPendingFiles] = useState<Message[]>([]);
   const [files, setFiles] = useState<Message[]>([]);
-  const [documents, setDocuments] = useState([]);
+  // const [documents, setDocuments] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
   const [openKnowledgeBase, setOpenKnowledgeBase] = useState(false);
@@ -182,12 +182,12 @@ const handleSend = async () => {
   } finally {
     setLoadingAI(false);
 
-    try {
-      const docs = await getAllDocuments();
-      setDocuments(docs);
-    } catch (err) {
-      console.error("Failed to refresh document list", err);
-    }
+    // try {
+    //   const docs = await getAllDocuments();
+    //   setDocuments(docs);
+    // } catch (err) {
+    //   console.error("Failed to refresh document list", err);
+    // }
   }
 };
 
@@ -208,34 +208,34 @@ const handleSend = async () => {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files;
-    if (selected) {
-      const newFiles: Message[] = [];
+  // const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const selected = e.target.files;
+  //   if (selected) {
+  //     const newFiles: Message[] = [];
 
-      for (const file of Array.from(selected)) {
-        try {
-          const uploaded = await uploadDocuments(file);
+  //     for (const file of Array.from(selected)) {
+  //       try {
+  //         const uploaded = await uploadDocuments(file);
 
-          newFiles.push({
-            id: createId(),
-            text: uploaded.document_name,
-            type: "file",
-            file,
-          });
-        } catch (error) {
-          console.error("Failed to upload file:", error);
-        }
-      }
+  //         newFiles.push({
+  //           id: createId(),
+  //           text: uploaded.document_name,
+  //           type: "file",
+  //           file,
+  //         });
+  //       } catch (error) {
+  //         console.error("Failed to upload file:", error);
+  //       }
+  //     }
 
-      try {
-        const docs = await getAllDocuments();
-        setDocuments(docs);
-      } catch (err) {
-        console.error("Failed to refresh document list after upload", err);
-      }
-    }
-  };
+  //     try {
+  //       const docs = await getAllDocuments();
+  //       setDocuments(docs);
+  //     } catch (err) {
+  //       console.error("Failed to refresh document list after upload", err);
+  //     }
+  //   }
+  // };
 
  const handleSelectConversation = async (id: string) => {
    try {
@@ -261,14 +261,14 @@ const handleSend = async () => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
-  const fetchDocuments = async () => {
-    try {
-      const docs = await getAllDocuments();
-      setDocuments(docs);
-    } catch (err) {
-      console.error("Error fetching documents", err);
-    }
-  };
+  // const fetchDocuments = async () => {
+  //   try {
+  //     const docs = await getAllDocuments();
+  //     setDocuments(docs);
+  //   } catch (err) {
+  //     console.error("Error fetching documents", err);
+  //   }
+  // };
 
   interface Conversation {
     id: string;
@@ -333,7 +333,7 @@ const handleSend = async () => {
 
   useEffect(() => {
     fetchConversations();
-    fetchDocuments();
+    // fetchDocuments();
   }, []);
 
   return (
@@ -616,20 +616,19 @@ const handleSend = async () => {
         >
           <Box
             sx={{
-              width: 300,
-              maxHeight: "80vh",
+              width:550,
+              maxHeight: "100vh",
               backgroundColor: "white",
               borderRadius: 3,
               p: 2,
-              overflowY: "auto",
+              // overflowY: "auto",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Render lại FileDrawer bên trong Modal */}
             <FileDrawer
               files={files}
-              documents={documents}
-              onFileUpload={handleFileUpload}
+              // documents={documents}
+              // onFileUpload={handleFileUpload}
               onDeleteFile={handleDeleteFile}
             />
           </Box>
