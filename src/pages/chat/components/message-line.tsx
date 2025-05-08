@@ -167,10 +167,10 @@ export default function MessageLine({
           px: 2,
           py: 1,
           borderRadius: 2,
-          maxWidth: "70%",
-          bgcolor: isAI ? "transparent" : "#e0f7fa",
+          maxWidth: isAI ? "85%" : "60%",
+          bgcolor: isAI ? "transparent" : "#F4F4F4",
           color: "text.primary",
-          border: isAI ? "1px solid #ccc" : "none",
+          border: isAI ? "none" : "none",
         }}
       >
         {isAI ? (
@@ -212,6 +212,19 @@ export default function MessageLine({
                           textDecoration: "underline",
                           wordBreak: "break-word",
                         },
+                        "& table": {
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          marginTop: "12px",
+                        },
+                        "& table th, & table td": {
+                          border: "1px solid #ccc",
+                          padding: "6px 10px",
+                          textAlign: "left",
+                        },
+                        "& table th": {
+                          backgroundColor: "#f0f0f0",
+                        },
                       }}
                       dangerouslySetInnerHTML={{ __html: marked(beforeJSON) }}
                     />
@@ -247,6 +260,19 @@ export default function MessageLine({
                           textDecoration: "underline",
                           wordBreak: "break-word",
                         },
+                        "& table": {
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          marginTop: "12px",
+                        },
+                        "& table th, & table td": {
+                          border: "1px solid #ccc",
+                          padding: "6px 10px",
+                          textAlign: "left",
+                        },
+                        "& table th": {
+                          backgroundColor: "#f0f0f0",
+                        },
                       }}
                       dangerouslySetInnerHTML={{ __html: marked(afterJSON) }}
                     />
@@ -278,6 +304,19 @@ export default function MessageLine({
                       color: "#0072e5",
                       textDecoration: "underline",
                       wordBreak: "break-word",
+                    },
+                    "& table": {
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      marginTop: "12px",
+                    },
+                    "& table th, & table td": {
+                      border: "1px solid #ccc",
+                      padding: "6px 10px",
+                      textAlign: "left",
+                    },
+                    "& table th": {
+                      backgroundColor: "#f0f0f0",
                     },
                   }}
                   dangerouslySetInnerHTML={{ __html: marked(message || "") }}

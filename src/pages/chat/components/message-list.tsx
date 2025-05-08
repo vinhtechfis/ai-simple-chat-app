@@ -14,7 +14,6 @@ export default function MessageList({
  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // as soon as messages change (or a new chat is selected)
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 

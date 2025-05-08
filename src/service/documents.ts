@@ -17,6 +17,18 @@ export const getAllDocuments = async () => {
   }
 };
 
+export const deleteDocumentById = async (id: string) => {
+  try {
+    const response = await axios.delete(`${BASE_URL}/api/n8n/document/${id}`, {
+      headers: { "ngrok-skip-browser-warning": "1" },
+    });
+    return response;
+  } catch (error) {
+    console.error(`Failed to delete document with id ${id}:`, error);
+    throw error;
+  }
+};
+
 export const uploadPatchDocuments = async (file: File) => {
   const formData = new FormData();
   formData.append("file", file);

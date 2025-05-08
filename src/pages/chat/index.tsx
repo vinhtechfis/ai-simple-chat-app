@@ -22,7 +22,6 @@ import {
 import SendIcon from "@mui/icons-material/Send";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import MessageList from "./components/message-list";
-import FileDrawer from "./components/file-drawer";
 import { Message } from "../../models/types";
 import { Icon } from "@iconify/react";
 import {
@@ -40,12 +39,13 @@ import {
 import NewChatModal from "./components/NewChatModal";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { useNavigate } from "react-router-dom";
 
 
 export default function ChatPage() {
 
   const { enqueueSnackbar } = useSnackbar();
-
+  const navigate = useNavigate();
   const [messageHistories, setMessageHistories] = useState<
   { id: string; title: string; messages: Message[] }[]
   >([]);
@@ -53,11 +53,11 @@ export default function ChatPage() {
   const [selectedSessionId, setSelectedSessionId] = useState<string>();
   const [input, setInput] = useState("");
   const [pendingFiles, setPendingFiles] = useState<Message[]>([]);
-  const [files, setFiles] = useState<Message[]>([]);
+  // const [files, setFiles] = useState<Message[]>([]);
   // const [documents, setDocuments] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
-  const [openKnowledgeBase, setOpenKnowledgeBase] = useState(false);
+  // const [openKnowledgeBase, setOpenKnowledgeBase] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [toDeleteId, setToDeleteId] = useState<string | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -257,9 +257,13 @@ const handleSend = async () => {
    }
  };
 
-  const handleDeleteFile = (id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
-  };
+  // const handleDeleteFile = (id: string) => {
+  //   setFiles((prev) => prev.filter((f) => f.id !== id));
+  // };
+
+   const handleOpenFileDrawer = () => {
+     navigate("/file-drawer"); // or whatever route you define
+   };
 
   // const fetchDocuments = async () => {
   //   try {
@@ -299,7 +303,7 @@ const handleSend = async () => {
     setMenuAnchorEl(null);
     setMenuForId(null);
   };
-  // when user picks “Delete” from the menu, show the dialog
+  
   const handleMenuDelete = () => {
     if (menuForId) {
       setToDeleteId(menuForId);
@@ -357,29 +361,56 @@ const handleSend = async () => {
           <Typography variant="h6" sx={{ fontWeight: "bold" }}>
             AI Chat
           </Typography>
-          <Tooltip
-            title="New Chat"
-            componentsProps={{
-              tooltip: {
-                sx: {
-                  backgroundColor: "black",
-                  color: "white",
-                  fontSize: 14,
+          <Box sx={{ display: "flex" }}>
+            <Tooltip
+              title="Upload Files"
+              componentsProps={{
+                tooltip: {
+                  sx: {
+                    backgroundColor: "black",
+                    color: "white",
+                    fontSize: 14,
+                  },
                 },
-              },
-            }}
-          >
-            <IconButton
-              onClick={() => setOpenModal(true)}
-              sx={{
-                backgroundColor: "#f5f8fb",
-                "&:hover": { backgroundColor: "#ECECEC" },
-                borderRadius: 2,
               }}
             >
-              <Icon icon="akar-icons:edit" width="24" height="24" />
-            </IconButton>
-          </Tooltip>
+              <IconButton
+                onClick={handleOpenFileDrawer}
+                sx={{
+                  backgroundColor: "#f5f8fb",
+                  "&:hover": { backgroundColor: "#ECECEC" },
+                  borderRadius: 2,
+                }}
+              >
+                {/* <Icon icon="akar-icons:edit" width="24" height="24" />
+                 */}
+                <Icon icon="uis:upload-alt" width="24" height="24" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip
+              title="New Chat"
+              componentsProps={{
+                tooltip: {
+                  sx: {
+                    backgroundColor: "black",
+                    color: "white",
+                    fontSize: 14,
+                  },
+                },
+              }}
+            >
+              <IconButton
+                onClick={() => setOpenModal(true)}
+                sx={{
+                  backgroundColor: "#f5f8fb",
+                  "&:hover": { backgroundColor: "#ECECEC" },
+                  borderRadius: 2,
+                }}
+              >
+                <Icon icon="akar-icons:edit" width="24" height="24" />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
         <List>
           {messageHistories.map((h) => (
@@ -404,7 +435,7 @@ const handleSend = async () => {
                     width: 32,
                     height: 24,
                     borderRadius: 12,
-                    mr:1
+                    mr: 1,
                   }}
                 >
                   <MoreHorizIcon fontSize="small" />
@@ -578,7 +609,7 @@ const handleSend = async () => {
         )}
       </Box>
 
-      <Box>
+      {/* <Box>
         {" "}
         <IconButton
           sx={{
@@ -596,9 +627,9 @@ const handleSend = async () => {
         >
           <Icon icon="fluent:document-48-regular" width="28" height="28" />
         </IconButton>
-      </Box>
+      </Box> */}
 
-      {openKnowledgeBase && (
+      {/* {openKnowledgeBase && (
         <Box
           sx={{
             position: "fixed",
@@ -633,7 +664,7 @@ const handleSend = async () => {
             />
           </Box>
         </Box>
-      )}
+      )} */}
 
       <NewChatModal
         open={openModal}
