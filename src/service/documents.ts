@@ -70,7 +70,7 @@ export const uploadDocumentByConversation = async (conversationId: string, file:
 };
 
 
-export const uploadDocuments = async (
+export const uploadDocumentWebhook = async (
   file: File
 ) => {
   const formData = new FormData();

@@ -17,7 +17,12 @@ import DownloadIcon from "@mui/icons-material/Download";
 import DeleteIcon from "@mui/icons-material/Delete";
 import UploadIcon from "@mui/icons-material/Upload";
 import { useSnackbar } from "notistack";
-import { uploadPatchDocuments, getAllDocuments, deleteDocumentById } from "../../../service/documents";
+import {
+  uploadPatchDocuments,
+  getAllDocuments,
+  deleteDocumentById,
+  uploadDocumentWebhook,
+} from "../../../service/documents";
 
 export default function FileDrawerPage() {
   const { enqueueSnackbar } = useSnackbar();
@@ -49,6 +54,7 @@ const [selectedDeleteId, setSelectedDeleteId] = useState<string | null>(null);
       setIsUploading(true);
       for (const file of selectedFile) {
         await uploadPatchDocuments(file);
+        await uploadDocumentWebhook(file);
       }
       enqueueSnackbar("Files uploaded successfully!", { variant: "success" });
       setSelectedFile([]);
@@ -70,7 +76,7 @@ const [selectedDeleteId, setSelectedDeleteId] = useState<string | null>(null);
     }
   };
 
-  const handleDeleteDocument = async (id: string) => {
+  const handleDeleteDocument = async (id: string) => {  
     setSelectedDeleteId(id);
     try {
       const res = await deleteDocumentById(id);
@@ -89,8 +95,6 @@ const [selectedDeleteId, setSelectedDeleteId] = useState<string | null>(null);
       setSelectedDeleteId(null);
     }
   };
-
-
 
   useEffect(() => {
     fetchDocuments();
