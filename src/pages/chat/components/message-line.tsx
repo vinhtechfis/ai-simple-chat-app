@@ -96,30 +96,6 @@ export default function MessageLine({
   let afterJSON = "";
   let hasChart = false;
 
-  // try {
-  //   const jsonRegex = /```json\s*([\s\S]*?)```/i;
-  //   const fallbackRegex = /({[\s\S]*})/;
-
-  //   const jsonMatch = message.match(jsonRegex) || message.match(fallbackRegex);
-
-  //   if (jsonMatch) {
-  //     const fullMatch = jsonMatch[0];
-  //     const jsonString = jsonMatch[1] || jsonMatch[0];
-
-  //     const parsed = JSON.parse(jsonString.trim());
-  //     if (parsed?.xAxis?.data && parsed?.series) {
-  //       parsedChartData = parsed;
-  //       hasChart = true;
-
-  //       const splitIndex = message.indexOf(fullMatch);
-  //       beforeJSON = message.slice(0, splitIndex);
-  //       afterJSON = message.slice(splitIndex + fullMatch.length);
-  //     }
-  //   }
-  // } catch (e) {
-  //   console.warn("Failed to parse chart JSON:", e);
-  // }
-
 
   try {
     const jsonRegex = /```json\s*([\s\S]*?)```/i;

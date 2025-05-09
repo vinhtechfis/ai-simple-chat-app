@@ -44,28 +44,45 @@ const [selectedDeleteId, setSelectedDeleteId] = useState<string | null>(null);
     }
   };
 
-  const handleFileUpload = async () => {
-    if (selectedFile.length === 0) {
-      enqueueSnackbar("Please select files to upload.", { variant: "warning" });
-      return;
-    }
+ const handleFileUpload = async () => {
+   if (selectedFile.length === 0) {
+     enqueueSnackbar("Please select files to upload.", { variant: "warning" });
+     return;
+   }
 
-    try {
-      setIsUploading(true);
-      for (const file of selectedFile) {
-        await uploadPatchDocuments(file);
-        await uploadDocumentWebhook(file);
-      }
-      enqueueSnackbar("Files uploaded successfully!", { variant: "success" });
-      setSelectedFile([]);
-      fetchDocuments();
-    } catch (err) {
-      console.error(err);
-      enqueueSnackbar("Error uploading files.", { variant: "error" });
-    } finally {
-      setIsUploading(false);
-    }
-  };
+   try {
+     setIsUploading(true);
+     let allSucceeded = true;
+
+     for (const file of selectedFile) {
+       try {
+         const patchResult = await uploadPatchDocuments(file);
+         const webhookResult = await uploadDocumentWebhook(file);
+
+         if (patchResult.status !== 201 || webhookResult.status !== 200) {
+           throw new Error("Upload failed for file: " + file.name);
+         }
+       } catch (innerErr) {
+         allSucceeded = false;
+         console.error("Error uploading file:", file.name, innerErr);
+       }
+     }
+
+     if (allSucceeded) {
+       enqueueSnackbar("Files uploaded successfully!", { variant: "success" });
+       setSelectedFile([]);
+       fetchDocuments();
+     } else {
+       enqueueSnackbar("Some files failed to upload.", { variant: "warning" });
+     }
+   } catch (err) {
+     console.error(err);
+     enqueueSnackbar("Error uploading files.", { variant: "error" });
+   } finally {
+     setIsUploading(false);
+   }
+ };
+
 
   const fetchDocuments = async () => {
     try {

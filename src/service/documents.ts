@@ -44,7 +44,7 @@ export const uploadPatchDocuments = async (file: File) => {
         },
       }
     );
-    return response.data?.data?.document;
+    return response;
   } catch (error) {
     console.error("Failed to upload document:", error);
     throw error;
@@ -88,5 +88,5 @@ export const uploadDocumentWebhook = async (
     }
   );
 
-  return response.data?.data?.document;
+  return response;
 };
